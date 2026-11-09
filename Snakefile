@@ -1,15 +1,15 @@
 import os
 from pathlib import Path
 
-configfile: "teste.yaml"
+configfile: "config.yaml"
 
-# Diretórios
+# Directories
 OUT = config["output_dir"]
 
-# Caminho do MultiQC
+# MultiQC Path
 MULTIQC = "/home/icaramujo/miniconda3/envs/multiqc/bin/multiqc"
 
-# Obter nomes das amostras
+# Get sample name
 samples_pt = glob_wildcards(
   config["input_dir"]["PT"] + "/{sample}_R1.fastq.gz"
 ).sample
@@ -20,7 +20,7 @@ samples_se = glob_wildcards(
 
 SAMPLES = list(samples_pt) + list(samples_se)
 
-# Associar as amostras às pastas
+# Associate samples to folders
 SAMPLE_DIR = {}
 
 for sample in samples_pt:
@@ -37,10 +37,10 @@ THREADS = config["threads"]
 rule all:
     input:
         OUT + "/MultiQC_original/multiqc_original.html",
-        OUT + "/MultiQC_filtrado/multiqc_filtrado.html"
+        OUT + "/MultiQC_filtered/multiqc_filtered.html"
 
 # ------------------------------------------
-# FASTQC Original
+# Original FASTQC
 # ------------------------------------------
 
 rule fastqc_original:
@@ -67,7 +67,7 @@ rule fastqc_original:
         """
 
 # -----------------------------------------------
-# MULTIQC ORIGINAL
+# ORIGINAL MultiQC
 #------------------------------------------------
 
 rule multiqc_original:
@@ -147,45 +147,45 @@ rule fastp:
 
 
 # --------------------------------------------------
-# FASTQC APÓS FASTP
+# Filtered FASTQC
 # --------------------------------------------------
 
-rule fastqc_filtrado:
+rule fastqc_filtered:
     input:
         R1=OUT + "/fastp/{sample}_R1.fastq.gz",
         R2=OUT + "/fastp/{sample}_R2.fastq.gz"
 
     output:
-        R1_html=OUT + "/FastQC_filtrado/{sample}_R1_fastqc.html",
-        R1_zip=OUT + "/FastQC_filtrado/{sample}_R1_fastqc.zip",
-        R2_html=OUT + "/FastQC_filtrado/{sample}_R2_fastqc.html",
-        R2_zip=OUT + "/FastQC_filtrado/{sample}_R2_fastqc.zip"
+        R1_html=OUT + "/FastQC_filtered/{sample}_R1_fastqc.html",
+        R1_zip=OUT + "/FastQC_filtered/{sample}_R1_fastqc.zip",
+        R2_html=OUT + "/FastQC_filtered/{sample}_R2_fastqc.html",
+        R2_zip=OUT + "/FastQC_filtered/{sample}_R2_fastqc.zip"
 
     threads: THREADS
 
     shell:
         """
-        mkdir -p {OUT}/FastQC_filtrado
+        mkdir -p {OUT}/FastQC_filtered
 
         fastqc \
             {input.R1} {input.R2} \
-            --outdir {OUT}/FastQC_filtrado \
+            --outdir {OUT}/FastQC_filtered \
             --threads {threads}
         """
 
 
 # --------------------------------------------------
-# MULTIQC FINAL
+# Final MULTIQC
 # --------------------------------------------------
 
 rule multiqc_filtrado:
     input:
         expand(
-            OUT + "/FastQC_filtrado/{sample}_R1_fastqc.html",
+            OUT + "/FastQC_filtered/{sample}_R1_fastqc.html",
             sample=SAMPLES
         ),
         expand(
-            OUT + "/FastQC_filtrado/{sample}_R2_fastqc.html",
+            OUT + "/FastQC_filtered/{sample}_R2_fastqc.html",
             sample=SAMPLES
         ),
         expand(
@@ -194,17 +194,17 @@ rule multiqc_filtrado:
         )
 
     output:
-        OUT + "/MultiQC_filtrado/multiqc_filtrado.html"
+        OUT + "/MultiQC_filtered/multiqc_filtered.html"
 
     shell:
         """
-        mkdir -p {OUT}/MultiQC_filtrado
+        mkdir -p {OUT}/MultiQC_filtered
 
        {MULTIQC} \
-            {OUT}/FastQC_filtrado \
+            {OUT}/FastQC_filtered \
             {OUT}/fastp \
-            --outdir {OUT}/MultiQC_filtrado \
-            --filename multiqc_filtrado.html \
+            --outdir {OUT}/MultiQC_filtered \
+            --filename multiqc_filtered.html \
             --force
         """
 
