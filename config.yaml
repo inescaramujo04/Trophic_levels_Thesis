@@ -1,16 +1,16 @@
-# Pastas com FASTQ originais
+# Folders with original FASTQ 
 input_dir:
   PT: "PT"
   SE: "SE"
 
-# Pasta de destino
+# Output folder
 output_dir: "Teste"
 
-# Numero de threads
+# Number of threads
 threads: 4
 
 
-# Parametros do fastp
+# Parameters of fastp
 fastp:
   qualified_quality_phred: 20
   length_required: 100
