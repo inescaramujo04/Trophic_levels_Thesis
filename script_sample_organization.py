@@ -2,78 +2,78 @@ import pandas as pd
 import re
 from pathlib import Path
 
-# Pasta onde estão os ficheiros Excel
-pasta = Path(__file__).parent / "Documentos"
-saida = pasta / "ficheiros_FASTQ_charcos"
-saida.mkdir(parents=True, exist_ok=True)
+# Folder containing the Excel files
+folder = Path(__file__).parent / "Documents"
+output_folder = folder / "FASTQ_pond_files"
+output_folder.mkdir(parents=True, exist_ok=True)
 
-# Ler a lista de amostras dos charcos
+# Read the list of pond samples
 ponds = pd.read_excel(
-    pasta / "Ponds_metagenomic samples.xlsx",
+    folder / "Ponds_metagenomic samples.xlsx",
     sheet_name="GENERAL"
 )
 
-# Criar uma tabela com o ID, país e ano de cada amostra
-info_amostras = ponds[
+# Create a table with the ID and country of each sample
+sample_info = ponds[
     ["ID.1", "Country"]
 ].dropna(subset=["ID.1", "Country"]).copy()
 
-info_amostras["ID.1"] = info_amostras["ID.1"].astype(str).str.strip()
+sample_info["ID.1"] = sample_info["ID.1"].astype(str).str.strip()
 
-# Remover eventuais duplicados
-info_amostras = info_amostras.drop_duplicates(subset=["ID.1"])
+# Remove potential duplicates
+sample_info = sample_info.drop_duplicates(subset=["ID.1"])
 
 
-# Percorrer os ficheiros Excel das placas
-for ficheiro in sorted(pasta.glob("1372_8_Sample_information_P*.xlsx")):
+# Iterate through the plate Excel files
+for file in sorted(folder.glob("1372_8_Sample_information_P*.xlsx")):
 
     df = pd.read_excel(
-        ficheiro,
+        file,
         sheet_name="Sample information",
         header=14
     )
 
     df = df[["NGI Sample ID", "Your sample name"]].dropna().copy()
-    df.columns = ["ID_sequenciacao", "Nome_amostra"]
+    df.columns = ["Sequencing_ID", "Sample_name"]
 
-    # Limpar os nomes originais
-    df["Nome_amostra"] = df["Nome_amostra"].astype(str).str.strip()
+    # Clean the original sample names
+    df["Sample_name"] = df["Sample_name"].astype(str).str.strip()
 
-    # Manter apenas as amostras que pertencem aos charcos
+    # Keep only samples belonging to the ponds
     df = df.merge(
-        info_amostras,
-        left_on="Nome_amostra",
+        sample_info,
+        left_on="Sample_name",
         right_on="ID.1",
         how="inner"
     )
 
-    # Adicionar país e ano ao nome da amostra
-    df["Nome_amostra"] = (
+    # Add the country to the sample name
+    df["Sample_name"] = (
         df["Country"].astype(str) + "_" +
-        df["Nome_amostra"]
+        df["Sample_name"]
     )
 
-    # Remover espaços e caracteres especiais
-    df["Nome_amostra"] = df["Nome_amostra"].apply(
+    # Remove spaces and special characters
+    df["Sample_name"] = df["Sample_name"].apply(
         lambda x: re.sub(r"[^A-Za-z0-9_]", "_", x)
     )
 
-    # Manter apenas as duas colunas necessárias
-    df = df[["ID_sequenciacao", "Nome_amostra"]]
+    # Keep only the two required columns
+    df = df[["Sequencing_ID", "Sample_name"]]
 
     if not df.empty:
 
-        nome_saida = ficheiro.stem.replace(
+        output_name = file.stem.replace(
             "1372_8_Sample_information_", ""
-        ) + "_charcos.txt"
+        ) + "_ponds.txt"
 
         df.to_csv(
-            saida / nome_saida,
+            output_folder / output_name,
             sep="\t",
             index=False,
             header=False
         )
 
-        print(f"{nome_saida}: {len(df)} amostras")
+        print(f"{output_name}: {len(df)} samples")
 
-print(f"Concluído! Ficheiros guardados em: {saida}")
+print(f"Completed! Files saved in: {output_folder}")
