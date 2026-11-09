@@ -1,0 +1,23 @@
+# Pastas com FASTQ originais
+input_dir:
+  PT: "PT"
+  SE: "SE"
+
+# Pasta de destino
+output_dir: "Teste"
+
+# Numero de threads
+threads: 4
+
+
+# Parametros do fastp
+fastp:
+  qualified_quality_phred: 20
+  length_required: 100
+  cut_front: false
+  cut_tail: false
+  detect_adapter_for_pe: true
+  trim_poly_g: false
+  trim_poly_x: true
+  poly_x_min_len: 10
+  low_complexity_filter: true
